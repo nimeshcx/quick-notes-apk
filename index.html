@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <!-- Ensures the app fits mobile phone screens properly -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>QuickNotes</title>
+  <style>
+    /* ==========================================
+       CSS VARIABLES (Adjust colors here!)
+       ========================================== */
+    :root {
+      --bg-color: #121212;       /* Main background color (Dark Mode) */
+      --card-bg: #1e1e1e;        /* Note card background */
+      --accent-color: #bb86fc;   /* Main button and highlight color */
+      --text-main: #ffffff;      /* Primary text color */
+      --text-muted: #aaaaaa;     /* Secondary/date text color */
+      --danger-color: #cf6679;   /* Delete button color */
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      padding: 16px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 24px;
+      margin-bottom: 12px;
+      color: var(--accent-color);
+    }
+
+    /* Search Bar and Input Styling */
+    input, textarea {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 10px;
+      background-color: var(--card-bg);
+      border: 1px solid #333;
+      border-radius: 8px;
+      color: var(--text-main);
+      font-size: 16px;
+    }
+
+    textarea {
+      height: 90px;
+      resize: none;
+    }
+
+    /* Save Button Styling */
+    .btn-save {
+      width: 100%;
+      padding: 12px;
+      background-color: var(--accent-color);
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-bottom: 20px;
+    }
+
+    /* Individual Note Card Styling */
+    .note-card {
+      background-color: var(--card-bg);
+      padding: 14px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      border-left: 4px solid var(--accent-color);
+    }
+
+    .note-title {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    .note-content {
+      font-size: 15px;
+      color: #dddddd;
+      white-space: pre-wrap; /* Preserves line breaks in notes */
+      margin-bottom: 10px;
+    }
+
+    .note-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .btn-delete {
+      background-color: var(--danger-color);
+      color: #000;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>QuickNotes</h1>
+
+  <!-- Search Input to filter notes -->
+  <input type="text" id="searchInput" placeholder="Search notes..." oninput="renderNotes()">
+
+  <!-- Note Creation Form -->
+  <input type="text" id="noteTitle" placeholder="Note Title">
+  <textarea id="noteContent" placeholder="Write your note here..."></textarea>
+  <button class="btn-save" onclick="addNote()">+ Save Note</button>
+
+  <!-- Container where saved notes will appear -->
+  <div id="notesList"></div>
+
+  <script>
+    // ==========================================
+    // JAVASCRIPT LOGIC
+    // ==========================================
+
+    // Adjustable Parameter: The key name used to store notes in the phone's memory
+    const STORAGE_KEY = 'my_saved_notes_v1';
+
+    // Load existing notes from localStorage, or start with an empty array []
+    let notes = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+
+    // Function to save the current 'notes' array into the phone's local storage
+    function saveToStorage() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
+    }
+
+    // Function to add a new note when the user taps "+ Save Note"
+    function addNote() {
+      const titleInput = document.getElementById('noteTitle');
+      const contentInput = document.getElementById('noteContent');
+
+      const title = titleInput.value.trim();
+      const content = contentInput.value.trim();
+
+      // Prevent saving completely empty notes
+      if (!title && !content) {
+        alert('Please enter a title or some note text!');
+        return;
+      }
+
+      // Create a new note object with a unique ID and current date
+      const newNote = {
+        id: Date.now(),
+        title: title || 'Untitled Note',
+        content: content,
+        date: new Date().toLocaleDateString()
+      };
+
+      // Add the new note to the top of our list
+      notes.unshift(newNote);
+      saveToStorage();
+
+      // Clear the text boxes for the next note
+      titleInput.value = '';
+      contentInput.value = '';
+
+      // Refresh the screen
+      renderNotes();
+    }
+
+    // Function to delete a note by its unique ID
+    function deleteNote(id) {
+      notes = notes.filter(note => note.id !== id);
+      saveToStorage();
+      renderNotes();
+    }
+
+    // Helper function to prevent HTML code injection when displaying text
+    function escapeHTML(str) {
+      return str.replace(/[&<>'"]/g, tag => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+      }[tag]));
+    }
+
+    // Function to display all matching notes on the screen
+    function renderNotes() {
+      const listContainer = document.getElementById('notesList');
+      const searchQuery = document.getElementById('searchInput').value.toLowerCase();
+
+      // Clear current list before redrawing
+      listContainer.innerHTML = '';
+
+      // Filter notes based on what is typed in the search box
+      const filteredNotes = notes.filter(note =>
+        note.title.toLowerCase().includes(searchQuery) ||
+        note.content.toLowerCase().includes(searchQuery)
+      );
+
+      // Show a friendly message if there are no notes
+      if (filteredNotes.length === 0) {
+        listContainer.innerHTML = '<p style="color: #777; text-align: center;">No notes found.</p>';
+        return;
+      }
+
+      // Create a visual card for each note
+      filteredNotes.forEach(note => {
+        const card = document.createElement('div');
+        card.className = 'note-card';
+        card.innerHTML = `
+          <div class="note-title">${escapeHTML(note.title)}</div>
+          <div class="note-content">${escapeHTML(note.content)}</div>
+          <div class="note-footer">
+            <span>${note.date}</span>
+            <button class="btn-delete" onclick="deleteNote(${note.id})">Delete</button>
+          </div>
+        `;
+        listContainer.appendChild(card);
+      });
+    }
+
+    // Draw the saved notes as soon as the app opens
+    renderNotes();
+  </script>
+</body>
+</html>

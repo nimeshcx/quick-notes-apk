@@ -1,0 +1,53 @@
+name: Build Android APK
+
+# Trigger this build automatically whenever code is pushed to the main branch
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Download your repository code into the cloud server
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Node.js (needed to run the Cordova app wrapper)
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Step 3: Set up Java 17 (required by the Android SDK to compile APKs)
+      - name: Setup Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      # Step 4: Set up the Android SDK tools
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      # Step 5: Install Cordova, wrap index.html, and build the APK
+      - name: Create Cordova Project and Build APK
+        run: |
+          npm install -g cordova
+          # You can adjust the package ID (com.myname.quicknotes) and App Name (QuickNotes) below
+          cordova create app com.myname.quicknotes QuickNotes
+          cd app
+          cordova platform add android
+          # Copy our index.html into the Cordova app's web folder
+          cp ../index.html www/index.html
+          # Build the installable debug APK
+          cordova build android
+
+      # Step 6: Save the finished APK so you can download it
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: QuickNotes-APK
+          path: app/platforms/android/app/build/outputs/apk/debug/app-debug.apk
