@@ -3,229 +3,219 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Planner</title>
+<title>Pinger Stabilizer</title>
 <style>
-  /* Clean Matte Minimalist Theme - Adjust colors here */
   :root {
-    --bg: #09090b;
-    --surface: #121215;
-    --border: #27272a;
-    --text: #f4f4f5;
-    --muted: #71717a;
-    --accent: #e11d48; /* Flat red accent dot/active state */
+    --bg: #000000;
+    --surface: #0e0e10;
+    --border: #222226;
+    --text: #ffffff;
+    --muted: #88888c;
+    --accent: #22c55e;
+    --danger: #ef4444;
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
-  body { background: var(--bg); color: var(--text); padding: 14px; max-width: 500px; margin: 0 auto; }
-  .mono { font-family: monospace; }
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: monospace; }
+  body { background: var(--bg); color: var(--text); padding: 12px; max-width: 500px; margin: 0 auto; }
+  
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 10px; }
+  .row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  
+  /* Status Header */
+  .status-badge { font-size: 11px; padding: 3px 8px; border-radius: 4px; border: 1px solid var(--border); color: var(--muted); }
+  .status-badge.active { color: var(--accent); border-color: var(--accent); }
 
-  /* Top Clock & Stopwatch Bar */
-  .top-bar { display: flex; justify-content: space-between; align-items: center; background: var(--surface); border: 1px solid var(--border); padding: 12px; border-radius: 6px; margin-bottom: 12px; }
-  .clock-time { font-size: 26px; font-weight: 700; letter-spacing: 1px; }
-  .clock-date { font-size: 12px; color: var(--muted); margin-top: 2px; }
-  .sw-box { text-align: right; }
-  .sw-time { font-size: 16px; margin-bottom: 4px; color: var(--text); }
-  .btn-sm { background: var(--bg); color: var(--text); border: 1px solid var(--border); padding: 4px 8px; border-radius: 4px; font-size: 11px; }
+  /* Stats Grid */
+  .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; text-align: center; margin-bottom: 10px; }
+  .stat-box { background: var(--bg); border: 1px solid var(--border); padding: 8px; border-radius: 4px; }
+  .stat-val { font-size: 18px; font-weight: bold; margin-top: 2px; }
+  .stat-lbl { font-size: 10px; color: var(--muted); }
 
-  /* Calendar Section */
-  .cal-box { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 12px; }
-  .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-weight: 600; font-size: 14px; }
-  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; font-size: 12px; }
-  .cal-day-name { color: var(--muted); padding-bottom: 4px; font-size: 11px; }
-  .cal-day { padding: 7px 0; border-radius: 4px; border: 1px solid transparent; cursor: pointer; position: relative; }
-  .cal-day.today { border-color: var(--muted); font-weight: bold; }
-  .cal-day.selected { background: var(--text); color: var(--bg); font-weight: bold; }
-  .cal-day.has-note::after { content: ''; width: 4px; height: 4px; background: var(--accent); border-radius: 50%; position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); }
+  /* Inputs & Controls */
+  input, select { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 10px; border-radius: 6px; margin-bottom: 8px; font-size: 13px; outline: none; }
+  .btn { width: 100%; padding: 12px; border-radius: 6px; font-weight: bold; font-size: 14px; border: none; cursor: pointer; margin-bottom: 8px; }
+  .btn-start { background: var(--text); color: var(--bg); }
+  .btn-stop { background: var(--danger); color: #fff; }
 
-  /* Notepad Inputs */
-  .filter-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 12px; color: var(--muted); }
-  input, textarea { width: 100%; background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 10px; border-radius: 6px; margin-bottom: 8px; font-size: 14px; outline: none; }
-  textarea { height: 70px; resize: none; }
-  .btn-main { width: 100%; background: var(--text); color: var(--bg); border: none; padding: 11px; border-radius: 6px; font-weight: 600; font-size: 14px; margin-bottom: 14px; }
+  /* Checkbox / Mode Toggles */
+  .toggle-row { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+  .toggle-row input { width: auto; margin: 0; }
 
-  /* Note List */
-  .note-card { background: var(--surface); border: 1px solid var(--border); padding: 12px; border-radius: 6px; margin-bottom: 8px; }
-  .note-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-  .note-title { font-weight: 600; font-size: 15px; }
-  .note-body { font-size: 13px; color: #d4d4d8; white-space: pre-wrap; margin-bottom: 8px; line-height: 1.4; }
-  .note-meta { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--muted); }
-  .btn-del { background: transparent; color: var(--accent); border: 1px solid var(--border); padding: 3px 8px; border-radius: 4px; font-size: 11px; }
+  /* Terminal Log Box */
+  .log-box { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 8px; height: 160px; overflow-y: auto; font-size: 11px; color: #a1a1aa; line-height: 1.4; }
+  .log-item { margin-bottom: 3px; border-bottom: 1px solid #111; padding-bottom: 2px; }
+  .log-ok { color: var(--accent); }
+  .log-err { color: var(--danger); }
 </style>
 </head>
 <body>
 
-  <!-- 1. CLOCK & STOPWATCH -->
-  <div class="top-bar">
-    <div>
-      <div class="clock-time mono" id="clock">00:00:00</div>
-      <div class="clock-date" id="todayStr">Loading...</div>
+  <!-- STATUS CARD -->
+  <div class="card">
+    <div class="row">
+      <span style="font-weight:bold; font-size:14px;">NET_STABILIZER</span>
+      <span id="statusBadge" class="status-badge">IDLE</span>
     </div>
-    <div class="sw-box">
-      <div class="sw-time mono" id="swDisplay">00:00</div>
-      <button class="btn-sm" onclick="toggleSw()" id="swBtn">Start</button>
-      <button class="btn-sm" onclick="resetSw()">Reset</button>
+    
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="stat-lbl">CURRENT</div>
+        <div class="stat-val" id="currPing">0ms</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-lbl">AVERAGE</div>
+        <div class="stat-val" id="avgPing">0ms</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-lbl">FAILED</div>
+        <div class="stat-val" id="failCount" style="color:var(--danger)">0</div>
+      </div>
     </div>
   </div>
 
-  <!-- 2. CALENDAR -->
-  <div class="cal-box">
-    <div class="cal-header">
-      <button class="btn-sm" onclick="changeMonth(-1)">&lt;</button>
-      <span id="monthLabel" class="mono">Month</span>
-      <button class="btn-sm" onclick="changeMonth(1)">&gt;</button>
+  <!-- CONTROLS CARD -->
+  <div class="card">
+    <label style="font-size:11px; color:var(--muted);">TARGET URL / HOST</label>
+    <input type="text" id="targetUrl" value="https://selfcare.hutch.lk">
+
+    <label style="font-size:11px; color:var(--muted);">PING INTERVAL / MODE</label>
+    <select id="intervalMode">
+      <option value="1000">Fast (1.0s)</option>
+      <option value="3000" selected>Balanced (3.0s)</option>
+      <option value="5000">Battery Saver (5.0s)</option>
+      <option value="RANDOM">Random Interval (2s - 6s)</option>
+    </select>
+
+    <div class="toggle-row">
+      <input type="checkbox" id="batterySaver" checked>
+      <label for="batterySaver">Max Battery & RAM Saver (Throttle UI logging)</label>
     </div>
-    <div class="cal-grid" id="calGrid"></div>
+
+    <button class="btn btn-start" id="mainBtn" onclick="togglePinger()">START STABILIZER</button>
   </div>
 
-  <!-- 3. NOTEPAD -->
-  <div class="filter-bar">
-    <span id="activeDateLabel">Showing: Today</span>
-    <button class="btn-sm" onclick="showAllNotes()">Show All Notes</button>
+  <!-- LOGS CARD -->
+  <div class="card" style="margin-bottom:0;">
+    <div class="row" style="margin-bottom:4px;">
+      <span style="font-size:11px; color:var(--muted);">LIVE EVENT LOG</span>
+      <span style="font-size:11px; color:var(--muted); cursor:pointer;" onclick="clearLogs()">CLEAR</span>
+    </div>
+    <div class="log-box" id="logBox">
+      <div class="log-item">> System ready. Tap Start.</div>
+    </div>
   </div>
-
-  <input type="text" id="noteTitle" placeholder="Note title...">
-  <textarea id="noteBody" placeholder="Write note for selected date..."></textarea>
-  <button class="btn-main" onclick="addNote()">Save Note</button>
-
-  <input type="text" id="search" placeholder="Search notes..." oninput="renderNotes()">
-  <div id="notesList"></div>
 
 <script>
-  const STORAGE_KEY = 'planner_notes_v2';
-  let notes = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-  let viewDate = new Date();
-  let selectedDate = fmtDate(new Date()); // YYYY-MM-DD or 'ALL'
+  let isRunning = false;
+  let timer = null;
+  let pings = [];
+  let fails = 0;
 
-  function fmtDate(d) {
-    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  function log(msg, type = '') {
+    const box = document.getElementById('logBox');
+    const time = new Date().toTimeString().split(' ')[0];
+    const cls = type === 'ok' ? 'log-ok' : type === 'err' ? 'log-err' : '';
+    
+    // In battery saver mode, only log errors or every 5th ping to save RAM
+    const isBatterySaver = document.getElementById('batterySaver').checked;
+    if (isBatterySaver && type === '' && Math.random() > 0.2) return;
+
+    box.innerHTML = `<div class="log-item ${cls}">[${time}] ${msg}</div>` + box.innerHTML;
+    
+    // Keep max 50 logs to prevent memory bloat on Vivo Y1s
+    if (box.children.length > 50) box.removeChild(box.lastChild);
   }
 
-  // --- LIVE CLOCK & STOPWATCH ---
-  function updateClock() {
-    const now = new Date();
-    document.getElementById('clock').textContent = now.toTimeString().split(' ')[0];
-    document.getElementById('todayStr').textContent = now.toDateString();
+  function clearLogs() {
+    document.getElementById('logBox.innerHTML') = '';
+    document.getElementById('logBox').innerHTML = '<div class="log-item">> Logs cleared.</div>';
   }
-  setInterval(updateClock, 1000);
-  updateClock();
 
-  let swSeconds = 0, swTimer = null;
-  function toggleSw() {
-    const btn = document.getElementById('swBtn');
-    if (swTimer) {
-      clearInterval(swTimer); swTimer = null; btn.textContent = 'Start';
+  function togglePinger() {
+    if (isRunning) {
+      stopPinger();
     } else {
-      btn.textContent = 'Stop';
-      swTimer = setInterval(() => {
-        swSeconds++;
-        const m = String(Math.floor(swSeconds / 60)).padStart(2, '0');
-        const s = String(swSeconds % 60).padStart(2, '0');
-        document.getElementById('swDisplay').textContent = `${m}:${s}`;
-      }, 1000);
-    }
-  }
-  function resetSw() {
-    if (swTimer) toggleSw();
-    swSeconds = 0;
-    document.getElementById('swDisplay').textContent = '00:00';
-  }
-
-  // --- CALENDAR ---
-  function renderCalendar() {
-    const grid = document.getElementById('calGrid');
-    grid.innerHTML = '';
-    const y = viewDate.getFullYear(), m = viewDate.getMonth();
-    document.getElementById('monthLabel').textContent = viewDate.toLocaleString('default', { month: 'short', year: 'numeric' });
-
-    ['Su','Mo','Tu','We','Th','Fr','Sa'].forEach(d => {
-      grid.innerHTML += `<div class="cal-day-name">${d}</div>`;
-    });
-
-    const firstDay = new Date(y, m, 1).getDay();
-    const totalDays = new Date(y, m + 1, 0).getDate();
-    const todayIso = fmtDate(new Date());
-
-    for (let i = 0; i < firstDay; i++) grid.innerHTML += `<div></div>`;
-
-    for (let d = 1; d <= totalDays; d++) {
-      const iso = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-      const isToday = iso === todayIso ? 'today' : '';
-      const isSel = iso === selectedDate ? 'selected' : '';
-      const hasNote = notes.some(n => n.date === iso) ? 'has-note' : '';
-      grid.innerHTML += `<div class="cal-day mono ${isToday} ${isSel} ${hasNote}" onclick="selectDate('${iso}')">${d}</div>`;
+      startPinger();
     }
   }
 
-  function changeMonth(dir) {
-    viewDate.setMonth(viewDate.getMonth() + dir);
-    renderCalendar();
+  function startPinger() {
+    const url = document.getElementById('targetUrl').value.trim();
+    if (!url) { alert('Please enter a target URL'); return; }
+
+    isRunning = true;
+    const btn = document.getElementById('mainBtn');
+    btn.textContent = 'STOP STABILIZER';
+    btn.className = 'btn btn-stop';
+    document.getElementById('statusBadge.className') = 'status-badge active';
+    document.getElementById('statusBadge').textContent = 'ACTIVE';
+    document.getElementById('statusBadge').className = 'status-badge active';
+
+    pings = [];
+    fails = 0;
+    log('Stabilizer started targeting: ' + url, 'ok');
+    
+    executePing(url);
   }
 
-  function selectDate(iso) {
-    selectedDate = iso;
-    document.getElementById('activeDateLabel').textContent = `Date: ${iso}`;
-    renderCalendar();
-    renderNotes();
+  function stopPinger() {
+    isRunning = false;
+    if (timer) clearTimeout(timer);
+    
+    const btn = document.getElementById('mainBtn');
+    btn.textContent = 'START STABILIZER';
+    btn.className = 'btn btn-start';
+    const badge = document.getElementById('statusBadge');
+    badge.textContent = 'IDLE';
+    badge.className = 'status-badge';
+    
+    log('Stabilizer stopped.');
   }
 
-  function showAllNotes() {
-    selectedDate = 'ALL';
-    document.getElementById('activeDateLabel').textContent = 'Showing: All Dates';
-    renderCalendar();
-    renderNotes();
+  function executePing(url) {
+    if (!isRunning) return;
+
+    const start = performance.now();
+    // Using no-cors or image/fetch trick to test connection latency
+    fetch(url + (url.includes('?') ? '&' : '?') + '_t=' + Date.now(), { mode: 'no-cors', cache: 'no-store' })
+      .then(() => {
+        if (!isRunning) return;
+        const latency = Math.round(performance.now() - start);
+        pings.push(latency);
+        if (pings.length > 20) pings.shift(); // keep rolling average window
+
+        const avg = Math.round(pings.reduce((a,b)=>a+b, 0) / pings.length);
+        
+        document.getElementById('currPing').textContent = latency + 'ms';
+        document.getElementById('avgPing').textContent = avg + 'ms';
+        log(`Ping OK: ${latency}ms (Avg: ${avg}ms)`, 'ok');
+
+        scheduleNext(url);
+      })
+      .catch(() => {
+        if (!isRunning) return;
+        fails++;
+        document.getElementById('failCount').textContent = fails;
+        log(`Ping failed / Timeout`, 'err');
+
+        scheduleNext(url);
+      });
   }
 
-  // --- NOTEPAD ---
-  function save() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
+  function scheduleNext(url) {
+    if (!isRunning) return;
+
+    const mode = document.getElementById('intervalMode').value;
+    let delay = 3000;
+
+    if (mode === 'RANDOM') {
+      // Random interval between 2000ms and 6000ms to save data & battery
+      delay = Math.floor(Math.random() * 4000) + 2000;
+    } else {
+      delay = parseInt(mode);
+    }
+
+    timer = setTimeout(() => executePing(url), delay);
   }
-
-  function addNote() {
-    const t = document.getElementById('noteTitle');
-    const b = document.getElementById('noteBody');
-    if (!t.value.trim() && !b.value.trim()) return;
-
-    const targetDate = selectedDate === 'ALL' ? fmtDate(new Date()) : selectedDate;
-    notes.unshift({
-      id: Date.now(),
-      title: t.value.trim() || 'Untitled',
-      body: b.value.trim(),
-      date: targetDate
-    });
-    t.value = ''; b.value = '';
-    save(); renderCalendar(); renderNotes();
-  }
-
-  function delNote(id) {
-    notes = notes.filter(n => n.id !== id);
-    save(); renderCalendar(); renderNotes();
-  }
-
-  function esc(s) {
-    return s.replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
-  }
-
-  function renderNotes() {
-    const q = document.getElementById('search').value.toLowerCase();
-    const list = document.getElementById('notesList');
-    const filtered = notes.filter(n => {
-      const matchDate = selectedDate === 'ALL' || n.date === selectedDate;
-      const matchQuery = n.title.toLowerCase().includes(q) || n.body.toLowerCase().includes(q);
-      return matchDate && matchQuery;
-    });
-
-    list.innerHTML = filtered.map(n => `
-      <div class="note-card">
-        <div class="note-head"><span class="note-title">${esc(n.title)}</span></div>
-        <div class="note-body">${esc(n.body)}</div>
-        <div class="note-meta">
-          <span class="mono">${n.date}</span>
-          <button class="btn-del" onclick="delNote(${n.id})">Delete</button>
-        </div>
-      </div>
-    `).join('') || `<p style="color:var(--muted);text-align:center;font-size:12px;padding:12px;">No notes for this view.</p>`;
-  }
-
-  selectDate(selectedDate);
 </script>
 </body>
 </html>
