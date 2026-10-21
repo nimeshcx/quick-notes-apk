@@ -1,233 +1,231 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <!-- Ensures the app fits mobile phone screens properly -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>QuickNotes</title>
-  <style>
-    /* ==========================================
-       CSS VARIABLES (Adjust colors here!)
-       ========================================== */
-    :root {
-      --bg-color: #121212;       /* Main background color (Dark Mode) */
-      --card-bg: #1e1e1e;        /* Note card background */
-      --accent-color: #bb86fc;   /* Main button and highlight color */
-      --text-main: #ffffff;      /* Primary text color */
-      --text-muted: #aaaaaa;     /* Secondary/date text color */
-      --danger-color: #cf6679;   /* Delete button color */
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Planner</title>
+<style>
+  /* Clean Matte Minimalist Theme - Adjust colors here */
+  :root {
+    --bg: #09090b;
+    --surface: #121215;
+    --border: #27272a;
+    --text: #f4f4f5;
+    --muted: #71717a;
+    --accent: #e11d48; /* Flat red accent dot/active state */
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+  body { background: var(--bg); color: var(--text); padding: 14px; max-width: 500px; margin: 0 auto; }
+  .mono { font-family: monospace; }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: sans-serif;
-    }
+  /* Top Clock & Stopwatch Bar */
+  .top-bar { display: flex; justify-content: space-between; align-items: center; background: var(--surface); border: 1px solid var(--border); padding: 12px; border-radius: 6px; margin-bottom: 12px; }
+  .clock-time { font-size: 26px; font-weight: 700; letter-spacing: 1px; }
+  .clock-date { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .sw-box { text-align: right; }
+  .sw-time { font-size: 16px; margin-bottom: 4px; color: var(--text); }
+  .btn-sm { background: var(--bg); color: var(--text); border: 1px solid var(--border); padding: 4px 8px; border-radius: 4px; font-size: 11px; }
 
-    body {
-      background-color: var(--bg-color);
-      color: var(--text-main);
-      padding: 16px;
-      max-width: 600px;
-      margin: 0 auto;
-    }
+  /* Calendar Section */
+  .cal-box { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 12px; }
+  .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-weight: 600; font-size: 14px; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; font-size: 12px; }
+  .cal-day-name { color: var(--muted); padding-bottom: 4px; font-size: 11px; }
+  .cal-day { padding: 7px 0; border-radius: 4px; border: 1px solid transparent; cursor: pointer; position: relative; }
+  .cal-day.today { border-color: var(--muted); font-weight: bold; }
+  .cal-day.selected { background: var(--text); color: var(--bg); font-weight: bold; }
+  .cal-day.has-note::after { content: ''; width: 4px; height: 4px; background: var(--accent); border-radius: 50%; position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); }
 
-    h1 {
-      font-size: 24px;
-      margin-bottom: 12px;
-      color: var(--accent-color);
-    }
+  /* Notepad Inputs */
+  .filter-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 12px; color: var(--muted); }
+  input, textarea { width: 100%; background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 10px; border-radius: 6px; margin-bottom: 8px; font-size: 14px; outline: none; }
+  textarea { height: 70px; resize: none; }
+  .btn-main { width: 100%; background: var(--text); color: var(--bg); border: none; padding: 11px; border-radius: 6px; font-weight: 600; font-size: 14px; margin-bottom: 14px; }
 
-    /* Search Bar and Input Styling */
-    input, textarea {
-      width: 100%;
-      padding: 12px;
-      margin-bottom: 10px;
-      background-color: var(--card-bg);
-      border: 1px solid #333;
-      border-radius: 8px;
-      color: var(--text-main);
-      font-size: 16px;
-    }
-
-    textarea {
-      height: 90px;
-      resize: none;
-    }
-
-    /* Save Button Styling */
-    .btn-save {
-      width: 100%;
-      padding: 12px;
-      background-color: var(--accent-color);
-      color: #000;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      font-weight: bold;
-      cursor: pointer;
-      margin-bottom: 20px;
-    }
-
-    /* Individual Note Card Styling */
-    .note-card {
-      background-color: var(--card-bg);
-      padding: 14px;
-      border-radius: 8px;
-      margin-bottom: 12px;
-      border-left: 4px solid var(--accent-color);
-    }
-
-    .note-title {
-      font-size: 18px;
-      font-weight: bold;
-      margin-bottom: 6px;
-    }
-
-    .note-content {
-      font-size: 15px;
-      color: #dddddd;
-      white-space: pre-wrap; /* Preserves line breaks in notes */
-      margin-bottom: 10px;
-    }
-
-    .note-footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 12px;
-      color: var(--text-muted);
-    }
-
-    .btn-delete {
-      background-color: var(--danger-color);
-      color: #000;
-      border: none;
-      padding: 6px 12px;
-      border-radius: 6px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-  </style>
+  /* Note List */
+  .note-card { background: var(--surface); border: 1px solid var(--border); padding: 12px; border-radius: 6px; margin-bottom: 8px; }
+  .note-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .note-title { font-weight: 600; font-size: 15px; }
+  .note-body { font-size: 13px; color: #d4d4d8; white-space: pre-wrap; margin-bottom: 8px; line-height: 1.4; }
+  .note-meta { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--muted); }
+  .btn-del { background: transparent; color: var(--accent); border: 1px solid var(--border); padding: 3px 8px; border-radius: 4px; font-size: 11px; }
+</style>
 </head>
 <body>
 
-  <h1>QuickNotes</h1>
+  <!-- 1. CLOCK & STOPWATCH -->
+  <div class="top-bar">
+    <div>
+      <div class="clock-time mono" id="clock">00:00:00</div>
+      <div class="clock-date" id="todayStr">Loading...</div>
+    </div>
+    <div class="sw-box">
+      <div class="sw-time mono" id="swDisplay">00:00</div>
+      <button class="btn-sm" onclick="toggleSw()" id="swBtn">Start</button>
+      <button class="btn-sm" onclick="resetSw()">Reset</button>
+    </div>
+  </div>
 
-  <!-- Search Input to filter notes -->
-  <input type="text" id="searchInput" placeholder="Search notes..." oninput="renderNotes()">
+  <!-- 2. CALENDAR -->
+  <div class="cal-box">
+    <div class="cal-header">
+      <button class="btn-sm" onclick="changeMonth(-1)">&lt;</button>
+      <span id="monthLabel" class="mono">Month</span>
+      <button class="btn-sm" onclick="changeMonth(1)">&gt;</button>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+  </div>
 
-  <!-- Note Creation Form -->
-  <input type="text" id="noteTitle" placeholder="Note Title">
-  <textarea id="noteContent" placeholder="Write your note here..."></textarea>
-  <button class="btn-save" onclick="addNote()">+ Save Note</button>
+  <!-- 3. NOTEPAD -->
+  <div class="filter-bar">
+    <span id="activeDateLabel">Showing: Today</span>
+    <button class="btn-sm" onclick="showAllNotes()">Show All Notes</button>
+  </div>
 
-  <!-- Container where saved notes will appear -->
+  <input type="text" id="noteTitle" placeholder="Note title...">
+  <textarea id="noteBody" placeholder="Write note for selected date..."></textarea>
+  <button class="btn-main" onclick="addNote()">Save Note</button>
+
+  <input type="text" id="search" placeholder="Search notes..." oninput="renderNotes()">
   <div id="notesList"></div>
 
-  <script>
-    // ==========================================
-    // JAVASCRIPT LOGIC
-    // ==========================================
+<script>
+  const STORAGE_KEY = 'planner_notes_v2';
+  let notes = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+  let viewDate = new Date();
+  let selectedDate = fmtDate(new Date()); // YYYY-MM-DD or 'ALL'
 
-    // Adjustable Parameter: The key name used to store notes in the phone's memory
-    const STORAGE_KEY = 'my_saved_notes_v1';
+  function fmtDate(d) {
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
 
-    // Load existing notes from localStorage, or start with an empty array []
-    let notes = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+  // --- LIVE CLOCK & STOPWATCH ---
+  function updateClock() {
+    const now = new Date();
+    document.getElementById('clock').textContent = now.toTimeString().split(' ')[0];
+    document.getElementById('todayStr').textContent = now.toDateString();
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
 
-    // Function to save the current 'notes' array into the phone's local storage
-    function saveToStorage() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
+  let swSeconds = 0, swTimer = null;
+  function toggleSw() {
+    const btn = document.getElementById('swBtn');
+    if (swTimer) {
+      clearInterval(swTimer); swTimer = null; btn.textContent = 'Start';
+    } else {
+      btn.textContent = 'Stop';
+      swTimer = setInterval(() => {
+        swSeconds++;
+        const m = String(Math.floor(swSeconds / 60)).padStart(2, '0');
+        const s = String(swSeconds % 60).padStart(2, '0');
+        document.getElementById('swDisplay').textContent = `${m}:${s}`;
+      }, 1000);
     }
+  }
+  function resetSw() {
+    if (swTimer) toggleSw();
+    swSeconds = 0;
+    document.getElementById('swDisplay').textContent = '00:00';
+  }
 
-    // Function to add a new note when the user taps "+ Save Note"
-    function addNote() {
-      const titleInput = document.getElementById('noteTitle');
-      const contentInput = document.getElementById('noteContent');
+  // --- CALENDAR ---
+  function renderCalendar() {
+    const grid = document.getElementById('calGrid');
+    grid.innerHTML = '';
+    const y = viewDate.getFullYear(), m = viewDate.getMonth();
+    document.getElementById('monthLabel').textContent = viewDate.toLocaleString('default', { month: 'short', year: 'numeric' });
 
-      const title = titleInput.value.trim();
-      const content = contentInput.value.trim();
+    ['Su','Mo','Tu','We','Th','Fr','Sa'].forEach(d => {
+      grid.innerHTML += `<div class="cal-day-name">${d}</div>`;
+    });
 
-      // Prevent saving completely empty notes
-      if (!title && !content) {
-        alert('Please enter a title or some note text!');
-        return;
-      }
+    const firstDay = new Date(y, m, 1).getDay();
+    const totalDays = new Date(y, m + 1, 0).getDate();
+    const todayIso = fmtDate(new Date());
 
-      // Create a new note object with a unique ID and current date
-      const newNote = {
-        id: Date.now(),
-        title: title || 'Untitled Note',
-        content: content,
-        date: new Date().toLocaleDateString()
-      };
+    for (let i = 0; i < firstDay; i++) grid.innerHTML += `<div></div>`;
 
-      // Add the new note to the top of our list
-      notes.unshift(newNote);
-      saveToStorage();
-
-      // Clear the text boxes for the next note
-      titleInput.value = '';
-      contentInput.value = '';
-
-      // Refresh the screen
-      renderNotes();
+    for (let d = 1; d <= totalDays; d++) {
+      const iso = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const isToday = iso === todayIso ? 'today' : '';
+      const isSel = iso === selectedDate ? 'selected' : '';
+      const hasNote = notes.some(n => n.date === iso) ? 'has-note' : '';
+      grid.innerHTML += `<div class="cal-day mono ${isToday} ${isSel} ${hasNote}" onclick="selectDate('${iso}')">${d}</div>`;
     }
+  }
 
-    // Function to delete a note by its unique ID
-    function deleteNote(id) {
-      notes = notes.filter(note => note.id !== id);
-      saveToStorage();
-      renderNotes();
-    }
+  function changeMonth(dir) {
+    viewDate.setMonth(viewDate.getMonth() + dir);
+    renderCalendar();
+  }
 
-    // Helper function to prevent HTML code injection when displaying text
-    function escapeHTML(str) {
-      return str.replace(/[&<>'"]/g, tag => ({
-        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
-      }[tag]));
-    }
-
-    // Function to display all matching notes on the screen
-    function renderNotes() {
-      const listContainer = document.getElementById('notesList');
-      const searchQuery = document.getElementById('searchInput').value.toLowerCase();
-
-      // Clear current list before redrawing
-      listContainer.innerHTML = '';
-
-      // Filter notes based on what is typed in the search box
-      const filteredNotes = notes.filter(note =>
-        note.title.toLowerCase().includes(searchQuery) ||
-        note.content.toLowerCase().includes(searchQuery)
-      );
-
-      // Show a friendly message if there are no notes
-      if (filteredNotes.length === 0) {
-        listContainer.innerHTML = '<p style="color: #777; text-align: center;">No notes found.</p>';
-        return;
-      }
-
-      // Create a visual card for each note
-      filteredNotes.forEach(note => {
-        const card = document.createElement('div');
-        card.className = 'note-card';
-        card.innerHTML = `
-          <div class="note-title">${escapeHTML(note.title)}</div>
-          <div class="note-content">${escapeHTML(note.content)}</div>
-          <div class="note-footer">
-            <span>${note.date}</span>
-            <button class="btn-delete" onclick="deleteNote(${note.id})">Delete</button>
-          </div>
-        `;
-        listContainer.appendChild(card);
-      });
-    }
-
-    // Draw the saved notes as soon as the app opens
+  function selectDate(iso) {
+    selectedDate = iso;
+    document.getElementById('activeDateLabel').textContent = `Date: ${iso}`;
+    renderCalendar();
     renderNotes();
-  </script>
+  }
+
+  function showAllNotes() {
+    selectedDate = 'ALL';
+    document.getElementById('activeDateLabel').textContent = 'Showing: All Dates';
+    renderCalendar();
+    renderNotes();
+  }
+
+  // --- NOTEPAD ---
+  function save() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
+  }
+
+  function addNote() {
+    const t = document.getElementById('noteTitle');
+    const b = document.getElementById('noteBody');
+    if (!t.value.trim() && !b.value.trim()) return;
+
+    const targetDate = selectedDate === 'ALL' ? fmtDate(new Date()) : selectedDate;
+    notes.unshift({
+      id: Date.now(),
+      title: t.value.trim() || 'Untitled',
+      body: b.value.trim(),
+      date: targetDate
+    });
+    t.value = ''; b.value = '';
+    save(); renderCalendar(); renderNotes();
+  }
+
+  function delNote(id) {
+    notes = notes.filter(n => n.id !== id);
+    save(); renderCalendar(); renderNotes();
+  }
+
+  function esc(s) {
+    return s.replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+  }
+
+  function renderNotes() {
+    const q = document.getElementById('search').value.toLowerCase();
+    const list = document.getElementById('notesList');
+    const filtered = notes.filter(n => {
+      const matchDate = selectedDate === 'ALL' || n.date === selectedDate;
+      const matchQuery = n.title.toLowerCase().includes(q) || n.body.toLowerCase().includes(q);
+      return matchDate && matchQuery;
+    });
+
+    list.innerHTML = filtered.map(n => `
+      <div class="note-card">
+        <div class="note-head"><span class="note-title">${esc(n.title)}</span></div>
+        <div class="note-body">${esc(n.body)}</div>
+        <div class="note-meta">
+          <span class="mono">${n.date}</span>
+          <button class="btn-del" onclick="delNote(${n.id})">Delete</button>
+        </div>
+      </div>
+    `).join('') || `<p style="color:var(--muted);text-align:center;font-size:12px;padding:12px;">No notes for this view.</p>`;
+  }
+
+  selectDate(selectedDate);
+</script>
 </body>
 </html>
